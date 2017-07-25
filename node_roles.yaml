@@ -1,0 +1,15 @@
+network-node:
+  name: Netwok Node
+  description: Detached Network Node
+  has_primary: true
+  public_ip_required: false
+  weight: 100                       # weight that will be used for ordering on fuel ui
+  conflicts:
+    - primary-controller
+    - controller
+    - compute
+  limits:
+    min: 1
+  update_required:
+    - primary-controller
+    - controller

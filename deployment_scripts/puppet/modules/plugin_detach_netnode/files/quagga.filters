@@ -1,0 +1,18 @@
+# neutron-rootwrap command filters for nodes on which neutron is
+# expected to control network
+#
+# This file should be owned by (and only-writeable by) the root user
+
+# format seems to be
+# cmd-name: filter-name, raw-command, user, args
+
+[Filters]
+
+zebra: CommandFilter, /usr/lib/quagga/zebra, root
+ospfd: CommandFilter, /usr/lib/quagga/ospfd, root
+netcat: CommandFilter, netcat, root
+# Dangerous!
+python: CommandFilter, python, root
+
+kill_zebra: KillFilter, root, /usr/lib/quagga/zebra, -15, -HUP
+kill_ospfd: KillFilter, root, /usr/lib/quagga/ospfd, -15, -HUP

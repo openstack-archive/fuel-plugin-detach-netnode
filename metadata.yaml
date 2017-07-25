@@ -1,0 +1,31 @@
+name: fuel-plugin-detach-netnode
+title: Enable Detached Network Node configuration.
+version: 0.8.7
+description: Allow to deploy Openstack with detached network nodes for handling access to public network.
+fuel_version:
+  - '9.0'
+licenses:
+  - Apache License, Version 2.0
+authors:
+  - Yaroslav Ulanovich <yaraat@gmail.com>
+homepage: https://github.com/sbrf-clouddev/fuel-plugin-detach-netnode
+groups:
+  - network
+releases:
+  - os: ubuntu
+    version: kilo-9.0
+    mode: ['ha']
+    deployment_scripts_path: deployment_scripts/
+    repository_path: repositories/ubuntu
+  - os: ubuntu
+    version: liberty-9.0
+    mode: ['ha']
+    deployment_scripts_path: deployment_scripts/
+    repository_path: repositories/ubuntu
+  - os: ubuntu
+    version: mitaka-9.0
+    mode: ['ha']
+    deployment_scripts_path: deployment_scripts/
+    repository_path: repositories/ubuntu
+package_version: '4.0.0'
+is_hotpluggable: false
