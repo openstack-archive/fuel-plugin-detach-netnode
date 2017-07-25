@@ -1,0 +1,44 @@
+{% block add_port %}
+enable
+conf t
+router ospf
+{% for subnet in port['subnets'] %}
+  network {{ subnet['cidr'] }} area 0.0.0.0
+{% endfor %}
+end
+{% endblock %}
+{% block delete_port %}
+enable
+conf t
+no interface {{ interface_name }}
+router ospf
+{% for subnet in port['subnets'] %}
+  no network {{ subnet['cidr'] }} area 0.0.0.0
+{% endfor %}
+end
+{% endblock %}
+{% block add_ext_port %}
+enable
+conf t
+interface {{ interface_name }}
+  ip ospf authentication-key polygon
+  ip ospf hello-interval 1
+  ip ospf dead-interval 4
+router ospf
+  no passive-interface {{ interface_name }}
+{% for subnet in ex_gw_port['subnets'] %}
+  network {{ subnet['cidr'] }} area 0.0.0.0
+{% endfor %}
+end
+{% endblock %}
+{% block delete_ext_port %}
+enable
+conf t
+router ospf
+   passive-interface {{ interface_name }}
+{% for subnet in ex_gw_port['subnets'] %}
+  no network {{ subnet['cidr'] }} area 0.0.0.0
+{% endfor %}
+no interface {{ interface_name }}
+end
+{% endblock %}

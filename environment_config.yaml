@@ -1,0 +1,16 @@
+attributes:
+  metadata:
+    label: "The Detached Network Node Plugin"
+    description: Allow to deploy Openstack with detached network nodes for handling access to public network.
+    weight: 55
+    group: network
+  l3_agent_quagga:
+    type: "checkbox"
+    weight: 60
+    label: "Install quagga l3 agent"
+    value: false
+  hyperv_region:
+    type: "checkbox"
+    weight: 65
+    label: "Install networking_hyperv python package (for HyperV region only)"
+    value: false

@@ -1,0 +1,208 @@
+
+# Skip L2, L3, DHCP and Metadata Neutron agents for controllers
+- id: primary-openstack-network-agents-l3
+  role: ['primary-controller','controller']
+  type: skipped
+  version: 2.0.0
+- id: openstack-network-agents-l3
+  role: ['primary-controller','controller']
+  type: skipped
+  version: 2.0.0
+- id: primary-openstack-network-agents-dhcp
+  role: ['primary-controller','controller']
+  type: skipped
+  version: 2.0.0
+- id: openstack-network-agents-dhcp
+  role: ['primary-controller','controller']
+  type: skipped
+  version: 2.0.0
+- id: primary-openstack-network-agents-metadata
+  role: ['primary-controller','controller']
+  type: skipped
+  version: 2.0.0
+- id: openstack-network-agents-metadata
+  role: ['primary-controller','controller']
+  type: skipped
+  version: 2.0.0
+- id: neutron_key
+  type: puppet
+  version: 2.0.0
+  role: ['primary-controller']
+  requires: [hiera, globals, keystone]
+  required_for: [openstack-network-networks,openstack-network-routers]
+  parameters:
+    puppet_manifest: '/etc/puppet/modules/openstack_tasks/examples/openstack-network/keystone.pp'
+    puppet_modules: puppet/modules:/etc/puppet/modules
+    timeout: 3600
+- id: network_node_pre
+  type: group
+  version: 2.0.0
+  role: ['/^(primary-)?network-node$/']
+  requires: ['deploy_start']
+  required_for: ['network_node']
+  tasks: [hiera, globals, tools, logging, netconfig, hosts, firewall, ssl-keys-saving, ssl-add-trust-chain, fuel_pkgs]
+  parameters:  
+    timeout: 3600
+    strategy:
+      type: one_by_one
+- id: network_node_firewall
+  type: puppet
+  version: 2.0.0
+  role: ['primary-network-node','network-node']
+  requires: ['firewall']
+  required_for: ['network_node']
+  parameters:
+    puppet_manifest: 'puppet/manifests/firewall.pp'
+    puppet_modules: 'puppet/modules:/etc/puppet/modules'
+    timeout: 3600
+- id: network_node_cluster
+  type: puppet
+  version: 2.0.0
+  role: ['/^(primary-)?network-node$/']
+  requires: ['network_node_firewall']
+  required_for: ['network_node']
+  cross-depends:
+    - name: network_node_cluster
+      role: 'primary-network-node'
+  cross-depended-by:
+    - name: openstack-network-start
+      role: "/(primary-)?network-node/"
+  parameters:
+    puppet_manifest: '/etc/puppet/modules/osnailyfacter/modular/cluster/cluster.pp'
+    puppet_modules: '/etc/puppet/modules'
+    timeout: 3600
+    strategy:
+      type: one_by_one
+- id: controller_override
+  type: puppet
+  version: 2.0.0
+  role: ['/^(primary-)?controller$/']
+  requires: ['globals']
+  required_for: ['netconfig']
+  parameters:
+    puppet_manifest: puppet/manifests/controller_override.pp
+    puppet_modules: puppet/modules:/etc/puppet/modules
+    timeout: 3600
+- id: network_node_override
+  type: puppet
+  version: 2.0.0
+  role: ['/^(primary-)?network-node$/']
+  requires: ['globals']
+  required_for: ['netconfig']
+  parameters:
+    puppet_manifest: puppet/manifests/override.pp
+    puppet_modules: puppet/modules:/etc/puppet/modules
+    timeout: 3600
+- id: network_node
+  type: group
+  version: 2.0.0
+  role: ['/^(primary-)?network-node$/']
+  requires: ['network_node_pre','network_node_override']
+  required_for: ['deploy_end']
+  tasks: [openstack-network-start, openstack-network-common-config, openstack-network-server-config, openstack-network-plugins-l2]
+  parameters:  
+    timeout: 3600
+    strategy:
+      type: one_by_one
+- id: network_node_l3_agent
+  type: puppet 
+  version: 2.0.0
+  role: ['/^(primary-)?network-node$/']
+  requires: ['openstack-network-plugins-l2']
+  required_for: ['openstack-network-end']
+  cross-depends:
+    - name: 'network_node_l3_agent'
+      role: 'primary-network-node'
+  parameters:
+    puppet_manifest: '/etc/puppet/modules/openstack_tasks/examples/openstack-network/agents/l3.pp'
+    puppet_modules: puppet/modules:/etc/puppet/modules
+    timeout: 3600
+- id: network_node_dhcp_agent
+  type: puppet
+  version: 2.0.0
+  role: ['/^(primary-)?network-node$/']
+  requires: ['openstack-network-plugins-l2']
+  required_for: ['openstack-network-end']
+  cross-depends:
+    - name: 'network_node_dhcp_agent'
+      role: 'primary-network-node'
+  parameters:
+    puppet_manifest: '/etc/puppet/modules/openstack_tasks/examples/openstack-network/agents/dhcp.pp'
+    puppet_modules: puppet/modules:/etc/puppet/modules
+    timeout: 3600
+- id: network_node_metadata_agent
+  type: puppet
+  version: 2.0.0
+  role: ['/^(primary-)?network-node$/']
+  requires: ['network_node_cluster','neutron_key','network_node_dhcp_agent']
+  required_for: ['openstack-network-end']
+  cross-depends:
+    - name: 'network_node_metadata_agent'
+      role: 'primary-network-node'
+  parameters:
+    puppet_manifest: '/etc/puppet/modules/openstack_tasks/examples/openstack-network/agents/metadata.pp'
+    puppet_modules: puppet/modules:/etc/puppet/modules
+    timeout: 3600
+- id: network_node_l3_quagga
+  type: puppet
+  version: 2.0.0
+  role: ['/^(primary-)?network-node$/']
+  requires: ['network_node_metadata_agent']
+  required_for: ['post_deployment_start']
+  cross-depends:
+    - name: 'network_node_l3_quagga'
+      role: 'primary-network-node'
+  parameters:
+    puppet_manifest: puppet/manifests/l3_quagga.pp
+    puppet_modules: puppet/modules:/etc/puppet/modules
+    timeout: 3600
+- id: network_node_neutron_mtu
+  type: puppet
+  version: 2.0.0
+  role: ['primary-controller', 'controller']
+  requires: ['post_deployment_start']
+  required_for: ['post_deployment_end']
+  parameters:
+    puppet_manifest: puppet/manifests/neutron_mtu.pp
+    puppet_modules: puppet/modules:/etc/puppet/modules
+    timeout: 3600
+- id: network_node_neutron_networks
+  type: puppet
+  version: 2.0.0
+  role: ['primary-controller']
+  requires: ['network_node_neutron_mtu']
+  required_for: ['post_deployment_end']
+  parameters:
+    puppet_manifest: puppet/manifests/neutron_networks.pp
+    puppet_modules: puppet/modules:/etc/puppet/modules
+    timeout: 3600
+- id: network_node_netnode_networks
+  type: puppet
+  version: 2.0.0
+  role: ['/^(primary-)?network-node$/']
+  requires: ['post_deployment_start']
+  required_for: ['post_deployment_end']
+  parameters:
+    puppet_manifest: puppet/manifests/netnode_networks.pp
+    puppet_modules: puppet/modules:/etc/puppet/modules
+    timeout: 3600
+- id: network_node_hyperv
+  type: puppet
+  version: 2.0.0
+  role: ['primary-network-node','network-node','primary-controller','controller']
+  requires: ['post_deployment_start']
+  required_for: ['post_deployment_end','network_node_neutron_hyperv']
+  parameters:
+    puppet_manifest: puppet/manifests/network_node_hyperv.pp
+    puppet_modules: puppet/modules:/etc/puppet/modules
+    timeout: 3600
+- id: network_node_neutron_hyperv
+  type: puppet
+  version: 2.0.0
+  role: ['primary-network-node','network-node','primary-controller','controller']
+  requires: ['network_node_hyperv']
+  required_for: ['post_deployment_end']
+  parameters:
+    puppet_manifest: puppet/manifests/neutron_hyperv.pp
+    puppet_modules: puppet/modules:/etc/puppet/modules
+    timeout: 3600
