@@ -17,7 +17,7 @@ run_ping_checker: false
 colocate_haproxy: false
 corosync_roles: ['network-node', 'primary-network-node']
 neutron_primary_controller_roles: ['primary-network-node']
-neutron_nodes: 
+neutron_nodes:
 <%=  scope.function_hiera_hash(['network_metadata'])['nodes'].inject({}) {|res, (k, v)| res[v['name']] = v if (v['node_roles']  & ['controller','network-node','primary-network-node','primary-controller']).any?; res }.to_yaml.split('\n')[1..-1].join('\n') %>
 ")
 
