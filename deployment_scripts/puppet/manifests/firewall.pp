@@ -28,4 +28,3 @@ openstack::firewall::multi_net {'115 pcsd-server':
   source_nets => $corosync_networks,
 }
                                                     
-

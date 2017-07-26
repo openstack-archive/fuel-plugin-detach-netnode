@@ -5,7 +5,7 @@ class plugin_detach_netnode::l3_quagga {
   Exec { path => '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin' }
 
   if $plugin_settings['l3_agent_quagga'] == true {
-  
+
     package { "quagga":
               ensure => present,
     }
